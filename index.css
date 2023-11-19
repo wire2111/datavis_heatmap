@@ -9,6 +9,10 @@
 }
 
 rect:hover {
-    border: solid black;
-    fill: white;
+    stroke: black;
+    z-index: 10;
+}
+
+#svg {
+    outline: solid black;
 }

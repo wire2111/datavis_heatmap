@@ -7,7 +7,7 @@ const URL = "https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData
 const DATA = mydata;
 
 
-//#region global vars
+//#region global vars  
 
 let NUM_PER_MONTH_RENDERED = [
   "make this 1 indexed",
@@ -16,8 +16,8 @@ let NUM_PER_MONTH_RENDERED = [
   0,0,0,0
 ]
 
-const W = 1000;
-const H = 600;
+const W = 1700;
+const H = 400;
 const P = 40;
 
 const xMin = d3.min(DATA.monthlyVariance, data => data.year); // 1753
@@ -32,18 +32,21 @@ const baseTemp = DATA.baseTemperature; // 8.66
 const dataPoints = DATA.monthlyVariance.length;
 
 // there will be 12 rows of bars, one for each month
-const barWidth = (W * 12) / dataPoints;
-const barHeight = H / 12;
+const barWidth = Math.floor(((W - P - P) * 12) / dataPoints);
+
+//const barWidth = 6
+
+const barHeight = Math.floor((H - P - P) / 12);
  
 //#endregion
 
-//#region scaling and axis stuff
+//#region scaling and axis stuff  
 
-const xScale = d3.scaleTime()
+const xScale = d3.scaleLinear()
   .domain([xMin, xMax])
   .range([P, W - P]);
 
-const yScale = d3.scaleTime()
+const yScale = d3.scaleLinear()
   .domain([yMin, yMax])
   .range([P, H - P]);
 
@@ -65,25 +68,33 @@ const xAxis = d3.axisBottom(xScale);
 const yAxis = d3.axisLeft(yScale);
 
 function xStart(d) {
-  const x = NUM_PER_MONTH_RENDERED[d.month] * barWidth;
+  const x = NUM_PER_MONTH_RENDERED[d.month] * barWidth + P;
   NUM_PER_MONTH_RENDERED[d.month] += 1;
   return x
 }
 
 function yStart(d) {
-  const y = (d.month - 1) * barHeight
+  const y = (d.month - 1) * barHeight + P;
   return y
 }
 
 //#endregion
 
-//#region render stuff
+//#region render stuff  
 
 const svg = d3.select("#vis")
   .append("svg")
     .attr("id", "svg")
     .attr("width", W)
     .attr("height", H);
+
+svg.append("g")
+  .attr("transform", `translate(40, ${H-P})`)
+  .call(xAxis)
+
+svg.append("g")
+  .attr("transform", `translate(35, 0)`)
+  .call(yAxis)
 
 svg.selectAll("rect")
   .data(DATA.monthlyVariance)
