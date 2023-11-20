@@ -1,4 +1,5 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
 import { mydata } from "./data.js";
 import { getData } from "./getData.js";
 
@@ -10,33 +11,26 @@ const DATA = mydata;
 //#region global vars  
 
 let NUM_PER_MONTH_RENDERED = [
-  "make this 1 indexed",
   0,0,0,0,
   0,0,0,0,
   0,0,0,0
 ]
 
-const W = 1700;
-const H = 400;
-const P = 40;
+// there will be 12 rows of bars, one for each month
+const dataPoints = DATA.monthlyVariance.length;
+const dataPointsPerRow = Math.ceil(dataPoints / 12)
+const barWidth = 6;
+const barHeight = 35;
+const P = 70;
+const W = P + (barWidth * dataPointsPerRow) + P;
+const H = P + (barHeight * 12) + P;
+
 
 const xMin = d3.min(DATA.monthlyVariance, data => data.year); // 1753
 const xMax = d3.max(DATA.monthlyVariance, data => data.year); // 2015
-const yMin = d3.min(DATA.monthlyVariance, data => data.month); // 1
-const yMax = d3.max(DATA.monthlyVariance, data => data.month); // 12
 const vMin = d3.min(DATA.monthlyVariance, data => data.variance); // -6.976
 const vMax = d3.max(DATA.monthlyVariance, data => data.variance); // 5.228
-
 const baseTemp = DATA.baseTemperature; // 8.66
-
-const dataPoints = DATA.monthlyVariance.length;
-
-// there will be 12 rows of bars, one for each month
-const barWidth = Math.floor(((W - P - P) * 12) / dataPoints);
-
-//const barWidth = 6
-
-const barHeight = Math.floor((H - P - P) / 12);
  
 //#endregion
 
@@ -44,12 +38,12 @@ const barHeight = Math.floor((H - P - P) / 12);
 
 const xScale = d3.scaleLinear()
   .domain([xMin, xMax])
-  .range([P, W - P]);
+  .range([P, W - P])
 
-const yScale = d3.scaleLinear()
-  .domain([yMin, yMax])
-  .range([P, H - P]);
-
+const yScale = d3.scaleTime()
+  .domain([new Date(2023, 0), new Date(2023, 11)])
+  .range([P + (barHeight / 2), (H - P) - (barHeight / 2)]);
+  
 const vScale = d3.scaleLinear()
   .domain([vMin, -6, -4, -2, 0, 1, 2, 4, vMax])
   .range([
@@ -64,12 +58,12 @@ const vScale = d3.scaleLinear()
     "rgb(215, 48, 39)",
   ]);
 
-const xAxis = d3.axisBottom(xScale);
-const yAxis = d3.axisLeft(yScale);
+const xAxis = d3.axisBottom(xScale).ticks(20, "d");
+const yAxis = d3.axisLeft(yScale).ticks(12, "%B")
 
 function xStart(d) {
-  const x = NUM_PER_MONTH_RENDERED[d.month] * barWidth + P;
-  NUM_PER_MONTH_RENDERED[d.month] += 1;
+  const x = NUM_PER_MONTH_RENDERED[d.month - 1] * barWidth + P;
+  NUM_PER_MONTH_RENDERED[d.month - 1] += 1;
   return x
 }
 
@@ -78,35 +72,66 @@ function yStart(d) {
   return y
 }
 
+
 //#endregion
 
 //#region render stuff  
 
-const svg = d3.select("#vis")
+var tooltip = d3.select("#vis")
+  .append("div")
+    .style("position", "absolute")
+    .style("visibility", "hidden")
+    .attr("id", "tooltip")
+    .text("");
+
+
+
+
+const svg = 
+
+d3.select("#vis")
   .append("svg")
     .attr("id", "svg")
     .attr("width", W)
     .attr("height", H);
 
 svg.append("g")
-  .attr("transform", `translate(40, ${H-P})`)
-  .call(xAxis)
+  .attr("id", "x-axis")
+  .attr("transform", `translate(0, ${H-P})`)
+  .call(xAxis);
 
 svg.append("g")
-  .attr("transform", `translate(35, 0)`)
-  .call(yAxis)
+  .attr("id", "y-axis")
+  .attr("transform", `translate(${P}, 0)`)
+  .call(yAxis);
 
 svg.selectAll("rect")
   .data(DATA.monthlyVariance)
   .enter()
   .append("rect")
+    .attr("class", "cell")
     .attr("x", d => xStart(d))
     .attr("y", d => yStart(d))
     .attr("width", barWidth)
     .attr("height", barHeight)
     .attr("fill", d => vScale(d.variance))
-    .attr("data-month", d => d.month)
+    .attr("data-month", d => d.month - 1) // needs to be 0-11 to pass fcc tests
     .attr("data-year", d => d.year)
-    .attr("data-temp", d => baseTemp + d.variance);
+    .attr("data-temp", d => baseTemp + d.variance)
+    .attr("data-variance", d=> d.variance)
+    .on("mouseover", e => {
+      tooltip.html(`
+        <p>Year: ${e.target.dataset.year}</p>
+        <p>Month: ${e.target.dataset.month}</p>
+        <p>Temp: ${e.target.dataset.temp}</p>
+        <p>Variance: ${e.target.dataset.variance}</p>
+      `)
+      console.log(e)
+      tooltip.style("top", e.pageY - 100 + "px")
+      tooltip.style("left", e.pageX - 30 + "px")
+      tooltip.style("visibility", "visible")
+      tooltip.attr("data-year", e.target.dataset.year)
+    })
+    .on("mouseout", e => tooltip.style("visibility", "hidden"))
 
 //#endregion
