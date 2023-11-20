@@ -4,17 +4,11 @@ import { mydata } from "./data.js";
 import { getData } from "./getData.js";
 
 const URL = "https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/global-temperature.json"
-const DATA = await getData(URL);
-//const DATA = mydata;
+//const DATA = await getData(URL);
+const DATA = mydata;
 
 
 //#region global vars  
-
-let NUM_PER_MONTH_RENDERED = [
-  0,0,0,0,
-  0,0,0,0,
-  0,0,0,0
-]
 
 // there will be 12 rows of bars, one for each month
 const dataPoints = DATA.monthlyVariance.length;
@@ -47,7 +41,7 @@ for (let i = 1; i < 10; i++) {
 
 const xScale = d3.scaleLinear()
   .domain([xMin, xMax])
-  .range([P, W - P])
+  .range([P + (barWidth / 2), W - P - (barWidth / 2)])
 
 const yScale = d3.scaleTime()
   .domain([new Date(2023, 0), new Date(2023, 11)])
@@ -57,9 +51,8 @@ const xAxis = d3.axisBottom(xScale).ticks(20, "d");
 const yAxis = d3.axisLeft(yScale).ticks(12, "%B")
 
 function xStart(d) {
-  const x = NUM_PER_MONTH_RENDERED[d.month - 1] * barWidth + P;
-  NUM_PER_MONTH_RENDERED[d.month - 1] += 1;
-  return x
+  const col_num = d.year - xMin
+  return col_num * barWidth + P
 }
 
 function yStart(d) {
